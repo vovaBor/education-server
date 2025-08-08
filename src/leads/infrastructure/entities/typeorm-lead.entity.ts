@@ -8,8 +8,8 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Client } from '../../clients/entities/client.entity';
+import { User } from '../../../users/entities/user.entity';
+import { Client } from '../../../clients/entities/client.entity';
 
 @Entity('leads')
 @Index(['status'])
@@ -25,7 +25,7 @@ export class Lead {
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   @Column({ 
     type: 'enum',
@@ -42,16 +42,16 @@ export class Lead {
   priority: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
-  estimatedValue: number;
+  estimatedValue: number | null;
 
   @Column({ type: 'date', nullable: true })
-  expectedCloseDate: Date;
+  expectedCloseDate: Date | null;
 
   @Column({ nullable: true })
-  assignedUserId: number;
+  assignedUserId: number | null;
 
   @Column({ nullable: true })
-  clientId: number;
+  clientId: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

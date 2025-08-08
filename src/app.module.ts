@@ -11,7 +11,7 @@ import { PaymentsModule } from './payments/payments.module';
 // Import entities
 import { User } from './users/entities/user.entity';
 import { Client } from './clients/entities/client.entity';
-import { Lead } from './leads/entities/lead.entity';
+import { Lead } from './leads/infrastructure/entities/typeorm-lead.entity';
 import { Invoice } from './invoices/entities/invoice.entity';
 import { InvoiceItem } from './invoices/entities/invoice-item.entity';
 import { Payment } from './payments/entities/payment.entity';
