@@ -7,7 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Lead } from '../../leads/entities/lead.entity';
+import { Lead } from '../../leads/infrastructure/entities/typeorm-lead.entity';
 
 @Entity('users')
 @Index(['email'], { unique: true })

@@ -19,6 +19,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('Analytics', 'Revenue analysis, lead management, and performance dashboards')
     .addTag('Clients', 'Client management operations')
+    .addTag('Leads', 'Lead management with DDD architecture - creation, assignment, and status tracking')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

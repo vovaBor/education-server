@@ -7,7 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Lead } from '../../leads/entities/lead.entity';
+import { Lead } from '../../leads/infrastructure/entities/typeorm-lead.entity';
 import { Invoice } from '../../invoices/entities/invoice.entity';
 
 @Entity('clients')
