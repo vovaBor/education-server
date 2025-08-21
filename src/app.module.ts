@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bull';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
+import { ResendModule } from 'nestjs-resend';
+
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UsersModule } from './users/users.module';
 import { ClientsModule } from './clients/clients.module';
@@ -21,6 +26,18 @@ import { Payment } from './payments/entities/payment.entity';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD,
+      },
+    }),
+    ResendModule.forRootAsync({
+      useFactory: async () => ({
+        apiKey: process.env.RESEND_API_KEY || 'your-resend-api-key',
+      }),
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -40,6 +57,10 @@ import { Payment } from './payments/entities/payment.entity';
     LeadsModule,
     InvoicesModule,
     PaymentsModule,
+    BullBoardModule.forRoot({
+      route: '/admin/queues',
+      adapter: ExpressAdapter,
+    }),
   ],
 })
 export class AppModule {}

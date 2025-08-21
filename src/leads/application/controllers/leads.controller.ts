@@ -1,5 +1,5 @@
 import {Body, Controller, Get, Inject, Param, ParseIntPipe, Post, Put} from '@nestjs/common';
-import {ApiExtraModels, ApiTags} from '@nestjs/swagger';
+import {ApiExtraModels, ApiTags, ApiOperation, ApiParam, ApiOkResponse} from '@nestjs/swagger';
 import {type CreateLeadCommand, CreateLeadUseCase} from '../use-cases/create-lead.use-case';
 import {type AssignLeadCommand, AssignLeadUseCase} from '../use-cases/assign-lead.use-case';
 import {type UpdateLeadStatusCommand, UpdateLeadStatusUseCase} from '../use-cases/update-lead-status.use-case';
@@ -16,6 +16,7 @@ import {
   LeadResponseDto,
   LeadSingleResponseDto
 } from '../dto/lead-response.dto';
+import {EnrichLeadDto, EnrichLeadResponseDto} from '../dto/lead-enrichment.dto';
 
 // Decorators
 import {
@@ -29,6 +30,9 @@ import {
 // Mappers
 import {LeadResponseMapper} from '../mappers/lead-response.mapper';
 
+// Job service
+import { LeadJobsService } from '../services/lead-jobs.service';
+
 @ApiTags('Leads')
 @ApiExtraModels(
   CreateLeadDto,
@@ -37,7 +41,9 @@ import {LeadResponseMapper} from '../mappers/lead-response.mapper';
   LeadResponseDto,
   LeadListResponseDto,
   LeadSingleResponseDto,
-  LeadOperationResponseDto
+  LeadOperationResponseDto,
+  EnrichLeadDto,
+  EnrichLeadResponseDto
 )
 @Controller('leads')
 export class LeadsController {
@@ -46,6 +52,7 @@ export class LeadsController {
     private readonly createLeadUseCase: CreateLeadUseCase,
     private readonly assignLeadUseCase: AssignLeadUseCase,
     private readonly updateLeadStatusUseCase: UpdateLeadStatusUseCase,
+    private readonly leadJobsService: LeadJobsService,
   ) {}
 
   @Get()
@@ -106,5 +113,15 @@ export class LeadsController {
     return await this.updateLeadStatusUseCase.execute(command);
   }
 
+  @Post(':id/enrich')
+  @ApiOperation({ summary: 'Enrich lead with external data' })
+  @ApiParam({ name: 'id', type: Number, description: 'Lead ID' })
+  @ApiOkResponse({ type: EnrichLeadResponseDto, description: 'Enrichment job started' })
+  async enrichLead(
+    @Param('id', ParseIntPipe) leadId: number,
+    @Body() enrichLeadDto: EnrichLeadDto,
+  ): Promise<EnrichLeadResponseDto> {
+    return await this.leadJobsService.enrichLead(leadId, enrichLeadDto);
+  }
 
 } 
