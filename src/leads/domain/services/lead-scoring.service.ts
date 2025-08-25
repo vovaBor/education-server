@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { ILeadScoringService, LeadScore, LeadScoringData, ScoreFactor, LeadPriority } from '../types/lead.types';
 import type { ILeadRepository } from '../repositories/lead.repository.interface';
 import { LEAD_REPOSITORY } from '../constants/tokens';
+import { SCORING_CONSTANTS } from '../constants/scoring.constants';
 
 @Injectable()
 export class LeadScoringService implements ILeadScoringService {
@@ -16,44 +17,44 @@ export class LeadScoringService implements ILeadScoringService {
     const factors: ScoreFactor[] = [];
     let totalScore = 0;
 
-    // Factor 1: Estimated Value (0-40 points)
+    // Factor 1: Estimated Value
     if (leadData.estimatedValue) {
       const valueScore = this.calculateValueScore(leadData.estimatedValue);
       factors.push({
         name: 'Estimated Value',
-        weight: 0.4,
+        weight: SCORING_CONSTANTS.FACTOR_WEIGHTS.VALUE,
         value: valueScore,
       });
-      totalScore += valueScore * 0.4;
+      totalScore += valueScore * SCORING_CONSTANTS.FACTOR_WEIGHTS.VALUE;
     }
 
-    // Factor 2: Priority (0-25 points)
+    // Factor 2: Priority
     const priorityScore = this.calculatePriorityScore(leadData.priority);
     factors.push({
       name: 'Priority',
-      weight: 0.25,
+      weight: SCORING_CONSTANTS.FACTOR_WEIGHTS.PRIORITY,
       value: priorityScore,
     });
-    totalScore += priorityScore * 0.25;
+    totalScore += priorityScore * SCORING_CONSTANTS.FACTOR_WEIGHTS.PRIORITY;
 
-    // Factor 3: Recency (0-20 points)
+    // Factor 3: Recency
     const recencyScore = this.calculateRecencyScore(leadData.createdAt);
     factors.push({
       name: 'Recency',
-      weight: 0.2,
+      weight: SCORING_CONSTANTS.FACTOR_WEIGHTS.RECENCY,
       value: recencyScore,
     });
-    totalScore += recencyScore * 0.2;
+    totalScore += recencyScore * SCORING_CONSTANTS.FACTOR_WEIGHTS.RECENCY;
 
-    // Factor 4: Client relationship (0-15 points)
+    // Factor 4: Client relationship
     if (leadData.clientId) {
       const clientScore = this.calculateClientScore();
       factors.push({
         name: 'Existing Client',
-        weight: 0.15,
+        weight: SCORING_CONSTANTS.FACTOR_WEIGHTS.CLIENT,
         value: clientScore,
       });
-      totalScore += clientScore * 0.15;
+      totalScore += clientScore * SCORING_CONSTANTS.FACTOR_WEIGHTS.CLIENT;
     }
 
     return {
@@ -91,26 +92,19 @@ export class LeadScoringService implements ILeadScoringService {
    * Higher values get higher scores (0-100 scale)
    */
   private calculateValueScore(estimatedValue: number): number {
-    if (estimatedValue <= 1000) return 10;
-    if (estimatedValue <= 5000) return 30;
-    if (estimatedValue <= 10000) return 50;
-    if (estimatedValue <= 25000) return 70;
-    if (estimatedValue <= 50000) return 85;
-    return 100; // Above 50k
+    if (estimatedValue <= SCORING_CONSTANTS.VALUE_THRESHOLDS.VERY_LOW) return SCORING_CONSTANTS.VALUE_SCORES.VERY_LOW;
+    if (estimatedValue <= SCORING_CONSTANTS.VALUE_THRESHOLDS.LOW) return SCORING_CONSTANTS.VALUE_SCORES.LOW;
+    if (estimatedValue <= SCORING_CONSTANTS.VALUE_THRESHOLDS.MEDIUM) return SCORING_CONSTANTS.VALUE_SCORES.MEDIUM;
+    if (estimatedValue <= SCORING_CONSTANTS.VALUE_THRESHOLDS.HIGH) return SCORING_CONSTANTS.VALUE_SCORES.HIGH;
+    if (estimatedValue <= SCORING_CONSTANTS.VALUE_THRESHOLDS.VERY_HIGH) return SCORING_CONSTANTS.VALUE_SCORES.VERY_HIGH;
+    return SCORING_CONSTANTS.VALUE_SCORES.PREMIUM;
   }
 
   /**
    * Calculates score based on priority
    */
   private calculatePriorityScore(priority: LeadPriority): number {
-    const priorityScores = {
-      [LeadPriority.LOW]: 25,
-      [LeadPriority.MEDIUM]: 50,
-      [LeadPriority.HIGH]: 75,
-      [LeadPriority.URGENT]: 100,
-    };
-
-    return priorityScores[priority] || 50;
+    return SCORING_CONSTANTS.PRIORITY_SCORES[priority] || SCORING_CONSTANTS.DEFAULT_PRIORITY_SCORE;
   }
 
   /**
@@ -121,18 +115,18 @@ export class LeadScoringService implements ILeadScoringService {
     const now = new Date();
     const daysDiff = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (daysDiff <= 1) return 100; // Same day
-    if (daysDiff <= 3) return 80;  // Within 3 days
-    if (daysDiff <= 7) return 60;  // Within a week
-    if (daysDiff <= 30) return 40; // Within a month
-    return 20; // Older than a month
+    if (daysDiff <= SCORING_CONSTANTS.RECENCY_THRESHOLDS.SAME_DAY) return SCORING_CONSTANTS.RECENCY_SCORES.SAME_DAY;
+    if (daysDiff <= SCORING_CONSTANTS.RECENCY_THRESHOLDS.THREE_DAYS) return SCORING_CONSTANTS.RECENCY_SCORES.THREE_DAYS;
+    if (daysDiff <= SCORING_CONSTANTS.RECENCY_THRESHOLDS.WEEK) return SCORING_CONSTANTS.RECENCY_SCORES.WEEK;
+    if (daysDiff <= SCORING_CONSTANTS.RECENCY_THRESHOLDS.MONTH) return SCORING_CONSTANTS.RECENCY_SCORES.MONTH;
+    return SCORING_CONSTANTS.RECENCY_SCORES.OLD;
   }
 
   /**
    * Calculates score for existing client relationship
    */
   private calculateClientScore(): number {
-    return 80; // Existing clients get a bonus
+    return SCORING_CONSTANTS.CLIENT_SCORE;
   }
 
 
