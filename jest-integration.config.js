@@ -1,22 +1,15 @@
 /** @type {import('jest').Config} */
+const baseConfig = require('./jest.config.base');
+
 const config = {
-  // Basic settings
+  ...baseConfig,
+  
+  // Integration-specific settings
   displayName: 'Integration Tests',
   rootDir: '.',
-  testEnvironment: 'node',
   
   // Test files
   testMatch: ['**/integration/**/*.integration.spec.ts'],
-  
-  // TypeScript support
-  moduleFileExtensions: ['js', 'json', 'ts'],
-  transform: {
-    '^.+\\.(t|j)s$': ['ts-jest', {
-      tsconfig: {
-        typeRoots: ['./test/types', './node_modules/@types'],
-      },
-    }],
-  },
   
   // Setup and teardown for Testcontainers
   globalSetup: '<rootDir>/test/global-setup.ts',
@@ -27,24 +20,16 @@ const config = {
   testTimeout: 60000, // Testcontainers need time
   maxWorkers: 1, // Single worker for DB stability
   
-  // Disable cache for clean tests
-  cache: false,
+  // Integration-specific settings
+  cache: false, // Disable cache for clean tests
+  coverageDirectory: 'coverage/integration',
   
-  // Verbose output for debugging
-  verbose: true,
-  
-  // Code coverage
+  // Override coverage to exclude test files
   collectCoverageFrom: [
-    'src/**/*.(t|j)s',
+    ...baseConfig.collectCoverageFrom,
     '!src/**/*.spec.ts',
     '!src/**/*.e2e-spec.ts',
   ],
-  coverageDirectory: 'coverage/integration',
-  
-  // Modules
-  moduleNameMapper: {
-    '^src/(.*)$': '<rootDir>/src/$1',
-  },
 };
 
 module.exports = config; 
