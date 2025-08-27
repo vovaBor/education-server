@@ -11,10 +11,14 @@ import { Lead } from '../../leads/infrastructure/entities/typeorm-lead.entity';
 
 @Entity('users')
 @Index(['email'], { unique: true })
+@Index(['keycloakId'], { unique: true })
 @Index(['firstName', 'lastName'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ unique: true, length: 255, nullable: true })
+  keycloakId: string;
 
   @Column({ length: 100 })
   firstName: string;
@@ -30,6 +34,15 @@ export class User {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ nullable: true, length: 255 })
+  username: string;
+
+  @Column({ default: false })
+  emailVerified: boolean;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  lastSyncAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;

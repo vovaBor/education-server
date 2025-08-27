@@ -5,6 +5,17 @@ import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
 import { ResendModule } from 'nestjs-resend';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+
+// Keycloak imports
+import {
+  KeycloakConnectModule,
+  AuthGuard,
+  ResourceGuard,
+  RoleGuard,
+  PolicyEnforcementMode,
+  TokenValidation,
+} from 'nest-keycloak-connect';
 
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UsersModule } from './users/users.module';
@@ -12,6 +23,8 @@ import { ClientsModule } from './clients/clients.module';
 import { LeadsModule } from './leads/leads.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
+import { AuthModule } from './auth/auth.module';
+import { JitSyncInterceptor } from './auth/interceptors/jit-sync.interceptor';
 
 // Import entities
 import { User } from './users/entities/user.entity';
@@ -26,6 +39,23 @@ import { Payment } from './payments/entities/payment.entity';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    
+    // Keycloak Configuration
+    KeycloakConnectModule.register({
+      authServerUrl: process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080',
+      realm: process.env.KEYCLOAK_REALM || 'education-realm',
+      clientId: process.env.KEYCLOAK_CLIENT_ID || 'education-server',
+      secret: (() => {
+        const secret = process.env.KEYCLOAK_CLIENT_SECRET;
+        if (!secret) {
+          throw new Error('KEYCLOAK_CLIENT_SECRET environment variable is required');
+        }
+        return secret;
+      })(),
+      policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
+      tokenValidation: TokenValidation.ONLINE,
+    }),
+    
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -47,7 +77,7 @@ import { Payment } from './payments/entities/payment.entity';
       database: process.env.DB_NAME || 'crm_db',
       entities: [User, Client, Lead, Invoice, InvoiceItem, Payment],
       migrations: ['dist/migrations/*{.ts,.js}'],
-      synchronize: false,
+      synchronize: process.env.NODE_ENV === 'development', // 👈 Temporarily enabled for development
       migrationsRun: false,
       logging: process.env.NODE_ENV === 'development',
     }),
@@ -57,10 +87,29 @@ import { Payment } from './payments/entities/payment.entity';
     LeadsModule,
     InvoicesModule,
     PaymentsModule,
+    AuthModule,
     BullBoardModule.forRoot({
       route: '/admin/queues',
       adapter: ExpressAdapter,
     }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ResourceGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: JitSyncInterceptor,
+    },
   ],
 })
 export class AppModule {}
