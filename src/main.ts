@@ -14,12 +14,18 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('CRM Analytics API')
-    .setDescription('Comprehensive CRM system with advanced analytics and performance monitoring')
-    .setVersion('1.0')
-    .addTag('Analytics', 'Revenue analysis, lead management, and performance dashboards')
-    .addTag('Clients', 'Client management operations')
-    .addTag('Leads', 'Lead management with DDD architecture - creation, assignment, and status tracking')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Введите JWT токен, полученный через /auth/login',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('🔐 Authentication', 'Получение и управление JWT токенами через Keycloak')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
