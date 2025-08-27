@@ -11,6 +11,8 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import {
   KeycloakConnectModule,
   AuthGuard,
+  ResourceGuard,
+  RoleGuard,
   PolicyEnforcementMode,
   TokenValidation,
 } from 'nest-keycloak-connect';
@@ -43,7 +45,13 @@ import { Payment } from './payments/entities/payment.entity';
       authServerUrl: process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080',
       realm: process.env.KEYCLOAK_REALM || 'education-realm',
       clientId: process.env.KEYCLOAK_CLIENT_ID || 'education-server',
-      secret: process.env.KEYCLOAK_CLIENT_SECRET || 'your-client-secret',
+      secret: (() => {
+        const secret = process.env.KEYCLOAK_CLIENT_SECRET;
+        if (!secret) {
+          throw new Error('KEYCLOAK_CLIENT_SECRET environment variable is required');
+        }
+        return secret;
+      })(),
       policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
       tokenValidation: TokenValidation.ONLINE,
     }),
@@ -89,6 +97,14 @@ import { Payment } from './payments/entities/payment.entity';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ResourceGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
     },
     {
       provide: APP_INTERCEPTOR,

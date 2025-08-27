@@ -9,16 +9,46 @@ export class AuthTokenService {
   constructor(private configService: ConfigService) {}
 
   async getToken(loginDto: LoginDto): Promise<TokenResponseDto> {
-    const keycloakUrl = this.configService.get<string>('KEYCLOAK_AUTH_SERVER_URL') || 'http://localhost:8080';
-    const realm = this.configService.get<string>('KEYCLOAK_REALM') || 'education-realm';
-    const clientId = this.configService.get<string>('KEYCLOAK_CLIENT_ID') || 'education-server';
+    const keycloakUrl = this.configService.get<string>('KEYCLOAK_AUTH_SERVER_URL');
+    const realm = this.configService.get<string>('KEYCLOAK_REALM');
+    const clientId = this.configService.get<string>('KEYCLOAK_CLIENT_ID');
     const clientSecret = this.configService.get<string>('KEYCLOAK_CLIENT_SECRET');
+
+    if (!keycloakUrl) {
+      throw new HttpException(
+        {
+          error: 'configuration_error',
+          error_description: 'KEYCLOAK_AUTH_SERVER_URL environment variable is required.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (!realm) {
+      throw new HttpException(
+        {
+          error: 'configuration_error',
+          error_description: 'KEYCLOAK_REALM environment variable is required.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (!clientId) {
+      throw new HttpException(
+        {
+          error: 'configuration_error',
+          error_description: 'KEYCLOAK_CLIENT_ID environment variable is required.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
 
     if (!clientSecret) {
       throw new HttpException(
         {
           error: 'configuration_error',
-          error_description: 'Client secret not configured. Set KEYCLOAK_CLIENT_SECRET environment variable.',
+          error_description: 'KEYCLOAK_CLIENT_SECRET environment variable is required.',
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );

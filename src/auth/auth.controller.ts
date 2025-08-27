@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, ValidationPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Public } from 'nest-keycloak-connect';
 
 import { AuthTokenService } from './auth-token.service';
 import { ProfileService } from './services/profile.service';
@@ -17,6 +18,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Public()
   @ApiPublicLogin()
   login(@Body(ValidationPipe) loginDto: LoginDto) {
     return this.authTokenService.getToken(loginDto);
