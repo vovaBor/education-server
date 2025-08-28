@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Client } from './entities/client.entity';
@@ -10,11 +12,19 @@ export class ClientsService {
   constructor(
     @InjectRepository(Client)
     private clientsRepository: Repository<Client>,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   async create(createClientDto: CreateClientDto): Promise<Client> {
     const client = this.clientsRepository.create(createClientDto);
-    return await this.clientsRepository.save(client);
+    const savedClient = await this.clientsRepository.save(client);
+    
+    await this.cache.mdel([
+      'analytics:revenue-by-client',
+      'analytics:performance-dashboard'
+    ])
+    
+    return savedClient;
   }
 
   async findAll(): Promise<Client[]> {
@@ -40,7 +50,14 @@ export class ClientsService {
     
     Object.assign(client, updateClientDto);
     
-    return await this.clientsRepository.save(client);
+    const updatedClient = await this.clientsRepository.save(client);
+    
+    await this.cache.mdel([
+      'analytics:revenue-by-client',
+      'analytics:performance-dashboard'
+    ])
+    
+    return updatedClient;
   }
 
   async remove(id: number): Promise<void> {

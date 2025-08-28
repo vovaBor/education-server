@@ -1,4 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import type { ILeadRepository } from '../../domain/repositories/lead.repository.interface';
 import { Lead } from '../../domain/entities/lead.entity';
 import { LeadPriority } from '../../domain/types/lead.types';
@@ -26,6 +28,7 @@ export class CreateLeadUseCase {
   constructor(
     @Inject(LEAD_REPOSITORY) private readonly leadRepository: ILeadRepository,
     private readonly leadScoringService: LeadScoringService,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   async execute(command: CreateLeadCommand): Promise<CreateLeadResult> {
@@ -50,6 +53,11 @@ export class CreateLeadUseCase {
         // Don't fail the creation if scoring fails
         console.warn('Failed to calculate initial lead score:', scoringError);
       }
+
+      await this.cache.mdel([
+        'analytics:leads-by-user',
+        'analytics:performance-dashboard'
+      ])
 
       return {
         success: true,

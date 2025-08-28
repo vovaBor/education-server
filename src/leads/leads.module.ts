@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CacheModule } from '@nestjs/cache-manager';
 import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
@@ -27,6 +28,7 @@ import { QUEUE_NAME, JOB_CONFIG } from '../shared/jobs/constants/simple-queue.co
 @Module({
   imports: [
     TypeOrmModule.forFeature([TypeOrmLead]),
+    CacheModule,
     BullModule.registerQueue({
       name: QUEUE_NAME,
       defaultJobOptions: JOB_CONFIG,

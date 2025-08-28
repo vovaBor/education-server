@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CacheModule } from '@nestjs/cache-manager';
 import { QUEUE_NAME, JOB_CONFIG } from '../shared/jobs/constants/simple-queue.constants';
 import { Invoice } from './entities/invoice.entity';
 import { InvoiceItem } from './entities/invoice-item.entity';
@@ -18,6 +19,9 @@ import { LeadEnrichmentService } from '../leads/application/services/lead-enrich
   imports: [
     // TypeORM entities
     TypeOrmModule.forFeature([Invoice, InvoiceItem]),
+    
+    // Cache module
+    CacheModule,
     
     // Bull queue for background job processing
     BullModule.registerQueue({

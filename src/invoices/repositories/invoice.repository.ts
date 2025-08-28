@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Invoice } from '../entities/invoice.entity';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class InvoiceRepository {
   constructor(
     @InjectRepository(Invoice)
     private readonly repository: Repository<Invoice>,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   /**
@@ -34,7 +37,15 @@ export class InvoiceRepository {
    */
   async create(invoiceData: Partial<Invoice>): Promise<Invoice> {
     const invoice = this.repository.create(invoiceData);
-    return await this.repository.save(invoice);
+    const savedInvoice = await this.repository.save(invoice);
+    
+    await this.cache.mdel([
+      'analytics:revenue-by-client',
+      'analytics:overdue-invoices',
+      'analytics:performance-dashboard'
+    ])
+    
+    return savedInvoice;
   }
 
   /**
