@@ -1,4 +1,12 @@
-import { Controller, Get, Query, ParseIntPipe, HttpStatus } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Query, 
+  ParseIntPipe, 
+  HttpStatus,
+  UseInterceptors
+} from '@nestjs/common';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiExtraModels } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { RevenueByClientResponseDto } from './dto/revenue-response.dto';
@@ -19,6 +27,7 @@ import {
 } from './decorators/api-analytics.decorators';
 
 @ApiTags('Analytics')
+@UseInterceptors(CacheInterceptor)
 @ApiExtraModels(
   RevenueByClientResponseDto, 
   LeadsByUserResponseDto, 
@@ -33,6 +42,8 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('revenue-by-client')
+  @CacheKey('analytics:revenue-by-client')
+  @CacheTTL(300000)
   @ApiRevenueByClient(RevenueByClientResponseDto)
   async getTotalRevenueByClient(
     @Query('limit', new ParseIntPipe({ optional: true, errorHttpStatusCode: HttpStatus.BAD_REQUEST })) limit?: number,
@@ -42,6 +53,8 @@ export class AnalyticsController {
   }
 
   @Get('leads-by-user')
+  @CacheKey('analytics:leads-by-user')
+  @CacheTTL(300000)
   @ApiLeadsByUser(LeadsByUserResponseDto)
   async getOpenLeadsByUser(
     @Query('limit', new ParseIntPipe({ optional: true, errorHttpStatusCode: HttpStatus.BAD_REQUEST })) limit?: number,
@@ -51,6 +64,8 @@ export class AnalyticsController {
   }
 
   @Get('overdue-invoices')
+  @CacheKey('analytics:overdue-invoices')
+  @CacheTTL(120000)
   @ApiOverdueInvoices()
   async getOverdueInvoices(
     @Query('min-days', new ParseIntPipe({ optional: true, errorHttpStatusCode: HttpStatus.BAD_REQUEST })) minDays?: number,
@@ -60,6 +75,8 @@ export class AnalyticsController {
   }
 
   @Get('performance-dashboard')
+  @CacheKey('analytics:performance-dashboard')
+  @CacheTTL(600000)
   @ApiPerformanceDashboard(PerformanceDashboardResponseDto)
   async getPerformanceDashboard(): Promise<PerformanceDashboardResponseDto> {
     return this.analyticsService.getPerformanceDashboard();
