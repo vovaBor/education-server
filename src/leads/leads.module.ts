@@ -1,46 +1,37 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
-import { BullModule } from '@nestjs/bull';
-import { BullBoardModule } from '@bull-board/nestjs';
-import { BullAdapter } from '@bull-board/api/bullAdapter';
-
-// Infrastructure
-import { Lead as TypeOrmLead } from './infrastructure/entities/typeorm-lead.entity';
-import { TypeOrmLeadRepository } from './infrastructure/repositories/typeorm-lead.repository';
 
 // Domain
-import { LeadScoringService } from './domain/services/lead-scoring.service';
-import { LeadAssignmentService } from './domain/services/lead-assignment.service';
+import { Lead as TypeOrmLead } from './infrastructure/entities/typeorm-lead.entity';
 
-// Application
-import { CreateLeadUseCase } from './application/use-cases/create-lead.use-case';
-import { AssignLeadUseCase } from './application/use-cases/assign-lead.use-case';
-import { UpdateLeadStatusUseCase } from './application/use-cases/update-lead-status.use-case';
-import { LeadsController } from './application/controllers/leads.controller';
-
-import { LeadEnrichmentService } from './application/services/lead-enrichment.service';
-import { LeadJobsService } from './application/services/lead-jobs.service';
-
+// Infrastructure  
+import { TypeOrmLeadRepository } from './infrastructure/repositories/typeorm-lead.repository';
 import { LEAD_REPOSITORY } from './domain/constants/tokens';
-import { QUEUE_NAME, JOB_CONFIG } from '../shared/jobs/constants/simple-queue.constants';
+
+// Application Services
+import { CreateLeadUseCase } from './application/use-cases/create-lead.use-case';
+import { LeadEnrichmentService } from './application/services/lead-enrichment.service';
+import { LeadScoringService } from './domain/services/lead-scoring.service';
+
+// AI Integration - Simplified
+import { AiAnalysisService } from './application/services/ai-analysis.service';
+import { LeadAnalysisChartService } from './application/services/lead-analysis-chart.service';
+import { defaultMlvocaConfig, AI_PROVIDER_CONFIG } from './application/config/ai-provider.config';
+
+// Controllers
+import { LeadsController } from './application/controllers/leads.controller';
+import { LeadAnalysisController } from './application/controllers/lead-analysis.controller';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([TypeOrmLead]),
-    CacheModule,
-    BullModule.registerQueue({
-      name: QUEUE_NAME,
-      defaultJobOptions: JOB_CONFIG,
-    }),
-    
-    // Register queue in Bull Board
-    BullBoardModule.forFeature({
-      name: QUEUE_NAME,
-      adapter: BullAdapter,
-    }),
+    CacheModule.register(),
   ],
-  controllers: [LeadsController],
+  controllers: [
+    LeadsController,
+    LeadAnalysisController,
+  ],
   providers: [
     // Repository
     {
@@ -48,24 +39,26 @@ import { QUEUE_NAME, JOB_CONFIG } from '../shared/jobs/constants/simple-queue.co
       useClass: TypeOrmLeadRepository,
     },
     
-    // Domain Services
-    LeadScoringService,
-    LeadAssignmentService,
-    
-    // Application Services
-    LeadEnrichmentService,
-    LeadJobsService,
-    
     // Use Cases
     CreateLeadUseCase,
-    AssignLeadUseCase,
-    UpdateLeadStatusUseCase,
+    
+    // Services
+    LeadScoringService,
+    LeadEnrichmentService,
+    
+    // AI Integration - Simple
+    AiAnalysisService,
+    LeadAnalysisChartService,
+    {
+      provide: AI_PROVIDER_CONFIG,
+      useValue: defaultMlvocaConfig,
+    },
   ],
   exports: [
-    LEAD_REPOSITORY,
+    CreateLeadUseCase,
     LeadScoringService,
-    LeadAssignmentService,
-    TypeOrmModule,
+    LeadEnrichmentService,
+    AiAnalysisService,
   ],
 })
 export class LeadsModule {}

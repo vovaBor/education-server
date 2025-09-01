@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
@@ -38,6 +40,24 @@ import { Payment } from './payments/entities/payment.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    
+    // Global Cache Configuration
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        store: await redisStore({
+          socket: {
+            host: configService.get('REDIS_HOST', 'localhost'),
+            port: configService.get<number>('REDIS_PORT', 6379),
+          },
+          password: configService.get('REDIS_PASSWORD'),
+          database: configService.get<number>('REDIS_CACHE_DB', 0),
+        }),
+        ttl: configService.get<number>('CACHE_TTL', 300000), // 5 minutes default
+        max: configService.get<number>('CACHE_MAX_ITEMS', 1000),
+      }),
     }),
     
     // Keycloak Configuration
